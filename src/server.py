@@ -3,7 +3,7 @@ import argparse
 import logging
 
 from flask import Flask, request, jsonify
-from connector import CashpassportConnector
+from connector import CashpassportConnector, CashpassportConnectorError, CashpassportConnectionError
 
 _LOG_LEVEL_STRINGS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
 
@@ -56,23 +56,10 @@ def login():
 
     user_api = CashpassportConnector(user_id, password, message, answer, time_zone)
 
-    response = user_api.login()
-
-    error = ""
-
-    if response == CashpassportConnector.ERROR_BAD_USER_ID:
-        error = "Invalid user"
-    elif response == CashpassportConnector.ERROR_BAD_PASSWORD:
-        error = "Invalid password"
-    elif response == CashpassportConnector.ERROR_BAD_SECURITY_MESSAGE:
-        error = "Bad security message found for user"
-    elif response == CashpassportConnector.ERROR_BAD_SECURITY_ANSWER:
-        error = "Invalid security answer"
-    elif response == CashpassportConnector.CONNECTION_ERROR:
-        error = "Connection error"
-
-    if error:
-        return jsonify({"success": False, "error": error, "code": response})
+    try:
+        user_api.login()
+    except CashpassportConnectorError as error:
+        return jsonify({"success": False, "error": error.message, "code": error.code})
 
     token = uuid.uuid4().hex
 
@@ -92,14 +79,14 @@ def get_balance():
 
     user_api = token_to_api[token]
 
-    if not user_api.is_logged_in():
-        user_api.login()
+    try:
+        balance = user_api.get_balance()
+    except CashpassportConnectorError as error:
+        if error.code == CashpassportConnector.ERROR_LOGGED_OUT:
+            del token_to_api[token]
+            return jsonify({"error": "invalid token", "code": 20})
 
-    balance = user_api.get_balance()
-
-    if balance == CashpassportConnector.ERROR_LOGGED_OUT:
-        del token_to_api[token]
-        return jsonify({"error": "invalid token", "code": 20})
+        return jsonify({"error": error.message, "code": error.code})
 
     return jsonify({"balance": balance})
 
@@ -111,19 +98,24 @@ def get_transactions():
     if not token or token not in token_to_api:
         return jsonify({"error": "invalid token", "code": 20})
 
-    user_api = token_to_api[token]
-
-    if not user_api.is_logged_in():
-        user_api.login()
-
     if not from_ts:
         from_ts = 0
 
-    transactions = user_api.get_transactions(from_ts=from_ts)
+    try:
+        from_ts = int(from_ts)
+    except ValueError:
+        return jsonify({"error": "from must be an int", "code": 50})
 
-    if transactions == CashpassportConnector.ERROR_LOGGED_OUT:
-        del token_to_api[token]
-        return jsonify({"error": "invalid token", "code": 20})
+    user_api = token_to_api[token]
+
+    try:
+        transactions = user_api.get_transactions(from_ts=from_ts)
+    except CashpassportConnectorError as error:
+        if error.code == CashpassportConnector.ERROR_LOGGED_OUT:
+            del token_to_api[token]
+            return jsonify({"error": "invalid token", "code": 20})
+
+        return jsonify({"error": error.message, "code": error.code})
 
     return jsonify({"transactions": transactions})
 
@@ -137,7 +129,10 @@ def logout():
     user_api = token_to_api[token]
 
     if user_api.is_logged_in():
-        user_api.logout()
+        try:
+            user_api.logout()
+        except CashpassportConnectorError:
+            pass
 
     del token_to_api[token]
 

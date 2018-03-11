@@ -8,6 +8,6 @@ setup(name='cashpassport-api',
       url='https://github.com/freshollie/cashpassport-api',
       install_requires=['mechanicalsoup',
                         'beautifulsoup4',
-                        'python-dateutil'
+                        'python-dateutil',
                         'flask']
      )
