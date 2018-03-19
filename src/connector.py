@@ -349,6 +349,9 @@ class CashpassportConnector:
                 if row.find('td') != -1:
                     cells = row.findAll('td')
 
+                    if len(cells) < 5:
+                        continue
+
                     date_time_text = cells[0].getText()
 
                     verified = (cells[1].getText().lower() != "pending")

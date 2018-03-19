@@ -1,0 +1,14 @@
+version: 3
+
+services:
+  api:
+    image: cashpassport-api:master
+    restart: always
+    command: python3 src/server.js --port 8283
+    networks:
+      - api_net
+    ports:
+      - "8283:8283"
+ 
+networks:
+  api_net:

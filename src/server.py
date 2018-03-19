@@ -147,6 +147,12 @@ if __name__ == "__main__":
                         type=_log_level_string_to_int,
                         nargs='?',
                         help='Set the logging output level. {0}'.format(_LOG_LEVEL_STRINGS))
+    
+    parser.add_argument('--port',
+                        default=8283,
+                        dest='port',
+                        type=int,
+                        help="Port to run the server on")
 
     args = parser.parse_args()
 
@@ -154,4 +160,5 @@ if __name__ == "__main__":
                         level=args.log_level,
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    app.run(debug=True, threaded=True)
+    app.run(threaded=True, port=args.port)
+    
