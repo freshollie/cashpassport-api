@@ -4,11 +4,23 @@ services:
   api:
     image: cashpassport-api:master
     restart: always
-    command: python3 src/server.js --port 8283
+    command: python3 src/server.py --port 8283
     networks:
       - api_net
-    ports:
-      - "8283:8283"
+      
+ tracker:
+   image: cashpassport-tracker:master
+   restart: always
+   command: "python3 src/tracker.py \
+            --api-address api:8283 \
+            --db-address db \
+            --db-user postgres \
+            --db-pass lelelelel \
+            --email-login cashpassportnotificiation@gmail.com \
+            --email-pass justforcashpassport12"
+   networks:
+     - api_net
+ 
  
 networks:
   api_net:

@@ -160,5 +160,5 @@ if __name__ == "__main__":
                         level=args.log_level,
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    app.run(threaded=True, port=args.port)
+    app.run(host='0.0.0.0', threaded=True, port=args.port)
     
