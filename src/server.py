@@ -161,4 +161,3 @@ if __name__ == "__main__":
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     app.run(host='0.0.0.0', threaded=True, port=args.port)
-    
